@@ -365,8 +365,9 @@ class Ui_FSO_SENDER(object):
         else:
             self.Status.setText(" No comport")
         try:
+            SerialPort = self.ComportSelector.currentText()
             if ThereComport:
-                pass
+                self.WorkinComport = serial.Serial(port=SerialPort,baudrate=1000000,timeout=1)
         except Exception as e:
             pass
 
@@ -398,6 +399,7 @@ class Ui_FSO_SENDER(object):
     def setTextMode(self):
         self.OperationMode = 2
         self.TextMode()
+        self.FileInfo.setText("")
 
     def setFilesMode(self):
         self.OperationMode = 1
@@ -425,13 +427,14 @@ class Ui_FSO_SENDER(object):
         self.horizontalLayoutWidget_3.hide()
         self.Upload_Button.setGeometry(QRect(110, 320, 136, 30))
 
+
     def EnableFuncs(self):
         pass
 
 
     def UploadProcess(self):
         # Update on the port selected and used..
-        self.Status.setText(f"{self.ComportSelector.currentText()}")
+        # self.Status.setText(f"{self.ComportSelector.currentText()}")
         try:
             if (len(self.AvailableComports) == 0) and (self.workingFile == "") :
                 if len(self.AvailableComports) == 0:
@@ -447,11 +450,18 @@ class Ui_FSO_SENDER(object):
 
             else:
                 SerialPort = self.ComportSelector.currentText() 
-                
-                if self.WorkinComport  == None or (self.WorkinComport.name() != SerialPort):
-                    self.WorkinComport = serial.Serial(port=SerialPort,baudrate=1000000,timeout=1)
+                print("reached...")
+                print(self.WorkinComport.name)
+                if self.WorkinComport  == None or (self.WorkinComport.name != SerialPort):
+                    print(SerialPort, self.WorkinComport.name(), self.WorkinComport)
+                    self.AlertDialog.setWindowTitle("Error")
+                    self.AlertDialog.setTextResult(" ERR: Connect first Comport")
+                    self.AlertDialog.center(mainWindow)
+                    self.AlertDialog.exec_()  
+                    return
                 else:
                     pass
+                print("reached...")
                 if self.OperationMode == 1:
                     # deal with file uploading process
                     if self.workingFile == "":
@@ -466,7 +476,6 @@ class Ui_FSO_SENDER(object):
                             with open(self.workingFile, 'rb') as file:
                                 while(content := file.read(102400)):
                                     self.WorkinComport.write(content)
-                                    print(content)
                     
                         except Exception as e:
                             self.AlertDialog.setWindowTitle("Error")
@@ -477,7 +486,14 @@ class Ui_FSO_SENDER(object):
                     pass
                         
         except Exception as e:
+            print("it's her.....")
             print(e)
+            if(e.__cause__ == None):
+                self.AlertDialog.setWindowTitle("Error")
+                self.AlertDialog.setTextResult(" ERR: Connect first Comport")
+                self.AlertDialog.center(mainWindow)
+                self.AlertDialog.exec_()  
+
         # first we have to esure the port is connected 
         
 
@@ -517,16 +533,12 @@ class Ui_FSO_SENDER(object):
         FSO_SENDER.setWindowTitle(QCoreApplication.translate("FSO_SENDER", u"FSO_SENDER", None))
         self.ConnectButton.setText(QCoreApplication.translate("FSO_SENDER", u"Connect", None))
         self.textEdit.setHtml(QCoreApplication.translate("FSO_SENDER", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n""<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n""p, li { white-space: pre-wrap; }\n""</style></head><body style=\" font-family:'Terminal'; font-size:14pt; font-weight:600; font-style:normal;\">\n""<p style=\"-qt-paragraph-type:empty; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Terminal','Segoe Script';\"><br /></p></body></html>", None))
-#if QT_CONFIG(accessibility)
         self.label.setAccessibleDescription(QCoreApplication.translate("FSO_SENDER", u"0", None))
-#endif // QT_CONFIG(accessibility)
         self.label.setText(QCoreApplication.translate("FSO_SENDER", u"Input Section", None))
         self.Text_Mode.setText(QCoreApplication.translate("FSO_SENDER", u"Text Mode", None))
         self.pushButton.setText(QCoreApplication.translate("FSO_SENDER", u"File Mode", None))
         self.Upload_Button.setText(QCoreApplication.translate("FSO_SENDER", u"Upload", None))
-#if QT_CONFIG(accessibility)
         self.label_2.setAccessibleDescription(QCoreApplication.translate("FSO_SENDER", u"0", None))
-#endif // QT_CONFIG(accessibility)
         self.label_2.setText(QCoreApplication.translate("FSO_SENDER", u"Monitoring Section", None))
         self.lineEdit.setText(QCoreApplication.translate("FSO_SENDER", u"  Select A file. png or txt", None))
         self.pushButton_2.setText(QCoreApplication.translate("FSO_SENDER", u"Select", None))
@@ -551,397 +563,3 @@ if __name__ == "__main__":
     atexit.register(ui.CleanResources)
     mainWindow.show()
     sys.exit(app.exec_())
-
-
-
-
-
-
-# # -*- coding: utf-8 -*-
-
-# ################################################################################
-# ## Form generated from reading UI file 'SenderAdRrVl.ui'
-# ##
-# ## Created by: Qt User Interface Compiler version 5.15.2
-# ##
-# ## WARNING! All changes made in this file will be lost when recompiling UI file!
-# ################################################################################
-
-# from PySide2.QtCore import *
-# from PySide2.QtGui import *
-# from PySide2.QtWidgets import *
-
-
-# class Ui_FSO_SENDER(object):
-#     def setupUi(self, FSO_SENDER):
-#         if not FSO_SENDER.objectName():
-#             FSO_SENDER.setObjectName(u"FSO_SENDER")
-#         FSO_SENDER.resize(620, 480)
-#         FSO_SENDER.setMinimumSize(QSize(620, 480))
-#         FSO_SENDER.setMaximumSize(QSize(630, 480))
-#         font = QFont()
-#         font.setFamily(u"Segoe Script")
-#         font.setPointSize(14)
-#         font.setBold(True)
-#         font.setWeight(75)
-#         FSO_SENDER.setFont(font)
-#         FSO_SENDER.setAutoFillBackground(False)
-#         FSO_SENDER.setStyleSheet(u"\n"
-# "QPushButton {\n"
-# "     background-color: #6262a2;\n"
-# "    color: white;\n"
-# "    border: none;\n"
-# "    padding: 1px 20px;\n"
-# "    font-size: 19px;\n"
-# "    border-radius: 5px;\n"
-# "}\n"
-# "\n"
-# "QPushButton:hover {\n"
-# "    background-color:  #6c757d ;\n"
-# "}\n"
-# "\n"
-# "QPushButton:pressed {\n"
-# "    background-color: #1c6399;\n"
-# "}\n"
-# "\n"
-# "QLabel {\n"
-# "    color: #333333;\n"
-# "    font-size: 19px;\n"
-# "}\n"
-# "\n"
-# "QLineEdit {\n"
-# "    border: 1px solid #dcdcdc;\n"
-# "    padding: 5px;\n"
-# "    border-radius: 5px;\n"
-# "}\n"
-# "\n"
-# "QLineEdit:focus {\n"
-# "    border: 1px solid #3498db;\n"
-# "}\n"
-# "\n"
-# "Line{\n"
-# "\n"
-# "}\n"
-# "\n"
-# "QMainWindow {\n"
-# "background-color:rgb(77, 77, 127);\n"
-# "}\n"
-# "\n"
-# "")
-#         self.centralwidget = QWidget(FSO_SENDER)
-#         self.centralwidget.setObjectName(u"centralwidget")
-#         self.horizontalLayoutWidget = QWidget(self.centralwidget)
-#         self.horizontalLayoutWidget.setObjectName(u"horizontalLayoutWidget")
-#         self.horizontalLayoutWidget.setGeometry(QRect(10, 10, 338, 41))
-#         self.horizontalLayout = QHBoxLayout(self.horizontalLayoutWidget)
-#         self.horizontalLayout.setObjectName(u"horizontalLayout")
-#         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-#         self.ComportSelector = QComboBox(self.horizontalLayoutWidget)
-#         self.ComportSelector.setObjectName(u"ComportSelector")
-#         self.ComportSelector.setMinimumSize(QSize(220, 30))
-#         self.ComportSelector.setMaximumSize(QSize(16777215, 30))
-#         self.ComportSelector.setCursor(QCursor(Qt.PointingHandCursor))
-
-#         self.horizontalLayout.addWidget(self.ComportSelector)
-
-#         self.ConnectButton = QPushButton(self.horizontalLayoutWidget)
-#         self.ConnectButton.setObjectName(u"ConnectButton")
-#         self.ConnectButton.setMinimumSize(QSize(0, 30))
-#         self.ConnectButton.setMaximumSize(QSize(16777215, 30))
-#         font1 = QFont()
-#         font1.setFamily(u"Consolas")
-#         font1.setBold(True)
-#         font1.setItalic(True)
-#         font1.setWeight(75)
-#         self.ConnectButton.setFont(font1)
-#         self.ConnectButton.setCursor(QCursor(Qt.PointingHandCursor))
-#         self.ConnectButton.setStyleSheet(u";")
-
-#         self.horizontalLayout.addWidget(self.ConnectButton)
-
-#         self.verticalLayoutWidget_2 = QWidget(self.centralwidget)
-#         self.verticalLayoutWidget_2.setObjectName(u"verticalLayoutWidget_2")
-#         self.verticalLayoutWidget_2.setGeometry(QRect(10, 160, 321, 151))
-#         self.verticalLayout_2 = QVBoxLayout(self.verticalLayoutWidget_2)
-#         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-#         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
-#         self.textEdit = QTextEdit(self.verticalLayoutWidget_2)
-#         self.textEdit.setObjectName(u"textEdit")
-#         font2 = QFont()
-#         font2.setFamily(u"Terminal")
-#         font2.setPointSize(14)
-#         font2.setBold(True)
-#         font2.setWeight(75)
-#         self.textEdit.setFont(font2)
-#         self.textEdit.setStyleSheet(u"border:1px solid #003f88;\n"
-# "")
-
-#         self.verticalLayout_2.addWidget(self.textEdit)
-
-#         self.verticalLayoutWidget_3 = QWidget(self.centralwidget)
-#         self.verticalLayoutWidget_3.setObjectName(u"verticalLayoutWidget_3")
-#         self.verticalLayoutWidget_3.setGeometry(QRect(90, 60, 161, 36))
-#         self.TtileBox = QVBoxLayout(self.verticalLayoutWidget_3)
-#         self.TtileBox.setObjectName(u"TtileBox")
-#         self.TtileBox.setContentsMargins(0, 0, 0, 0)
-#         self.label = QLabel(self.verticalLayoutWidget_3)
-#         self.label.setObjectName(u"label")
-#         font3 = QFont()
-#         font3.setFamily(u"Segoe Script")
-#         font3.setBold(True)
-#         font3.setWeight(75)
-#         self.label.setFont(font3)
-#         self.label.setLayoutDirection(Qt.LeftToRight)
-#         self.label.setStyleSheet(u"color: #fdc500; \n"
-# "background-color: none;\n"
-# "\n"
-# "")
-#         self.label.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
-
-#         self.TtileBox.addWidget(self.label)
-
-#         self.horizontalLayoutWidget_2 = QWidget(self.centralwidget)
-#         self.horizontalLayoutWidget_2.setObjectName(u"horizontalLayoutWidget_2")
-#         self.horizontalLayoutWidget_2.setGeometry(QRect(40, 120, 294, 37))
-#         self.horizontalLayout_2 = QHBoxLayout(self.horizontalLayoutWidget_2)
-#         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-#         self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-#         self.Text_Mode = QPushButton(self.horizontalLayoutWidget_2)
-#         self.Text_Mode.setObjectName(u"Text_Mode")
-#         self.Text_Mode.setMinimumSize(QSize(0, 30))
-#         self.Text_Mode.setMaximumSize(QSize(16777215, 30))
-#         self.Text_Mode.setFont(font3)
-#         self.Text_Mode.setCursor(QCursor(Qt.PointingHandCursor))
-#         self.Text_Mode.setStyleSheet(u"")
-
-#         self.horizontalLayout_2.addWidget(self.Text_Mode)
-
-#         self.pushButton = QPushButton(self.horizontalLayoutWidget_2)
-#         self.pushButton.setObjectName(u"pushButton")
-#         self.pushButton.setMinimumSize(QSize(0, 30))
-#         self.pushButton.setMaximumSize(QSize(16777215, 30))
-#         self.pushButton.setFont(font3)
-#         self.pushButton.setCursor(QCursor(Qt.PointingHandCursor))
-#         self.pushButton.setStyleSheet(u";")
-
-#         self.horizontalLayout_2.addWidget(self.pushButton)
-
-#         self.Upload_Button = QPushButton(self.centralwidget)
-#         self.Upload_Button.setObjectName(u"Upload_Button")
-#         self.Upload_Button.setGeometry(QRect(110, 400, 136, 30))
-#         self.Upload_Button.setMinimumSize(QSize(0, 30))
-#         self.Upload_Button.setMaximumSize(QSize(16777215, 30))
-#         self.Upload_Button.setFont(font3)
-#         self.Upload_Button.setCursor(QCursor(Qt.PointingHandCursor))
-#         self.Upload_Button.setStyleSheet(u"")
-#         self.verticalLayoutWidget_4 = QWidget(self.centralwidget)
-#         self.verticalLayoutWidget_4.setObjectName(u"verticalLayoutWidget_4")
-#         self.verticalLayoutWidget_4.setGeometry(QRect(370, 60, 231, 36))
-#         self.TtileBox_2 = QVBoxLayout(self.verticalLayoutWidget_4)
-#         self.TtileBox_2.setObjectName(u"TtileBox_2")
-#         self.TtileBox_2.setContentsMargins(0, 0, 0, 0)
-#         self.label_2 = QLabel(self.verticalLayoutWidget_4)
-#         self.label_2.setObjectName(u"label_2")
-#         self.label_2.setFont(font3)
-#         self.label_2.setLayoutDirection(Qt.LeftToRight)
-#         self.label_2.setStyleSheet(u"color: #fdc500; \n"
-# "background-color: none;\n"
-# "\n"
-# "")
-#         self.label_2.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
-
-#         self.TtileBox_2.addWidget(self.label_2)
-
-#         self.line = QFrame(self.centralwidget)
-#         self.line.setObjectName(u"line")
-#         self.line.setGeometry(QRect(10, 90, 621, 0))
-#         self.line.setMinimumSize(QSize(0, 0))
-#         self.line.setMaximumSize(QSize(16777215, 0))
-#         self.line.setStyleSheet(u"color: green;\n"
-# "")
-#         self.line.setFrameShape(QFrame.HLine)
-#         self.line.setFrameShadow(QFrame.Sunken)
-#         self.line_2 = QFrame(self.centralwidget)
-#         self.line_2.setObjectName(u"line_2")
-#         self.line_2.setGeometry(QRect(330, 110, 20, 401))
-#         self.line_2.setStyleSheet(u"")
-#         self.line_2.setFrameShape(QFrame.VLine)
-#         self.line_2.setFrameShadow(QFrame.Sunken)
-#         self.line_3 = QFrame(self.centralwidget)
-#         self.line_3.setObjectName(u"line_3")
-#         self.line_3.setGeometry(QRect(10, 100, 611, 21))
-#         self.line_3.setFrameShape(QFrame.HLine)
-#         self.line_3.setFrameShadow(QFrame.Sunken)
-#         self.horizontalLayoutWidget_3 = QWidget(self.centralwidget)
-#         self.horizontalLayoutWidget_3.setObjectName(u"horizontalLayoutWidget_3")
-#         self.horizontalLayoutWidget_3.setGeometry(QRect(10, 320, 321, 42))
-#         self.horizontalLayout_3 = QHBoxLayout(self.horizontalLayoutWidget_3)
-#         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-#         self.horizontalLayout_3.setContentsMargins(0, 0, 0, 0)
-#         self.lineEdit = QLineEdit(self.horizontalLayoutWidget_3)
-#         self.lineEdit.setObjectName(u"lineEdit")
-#         self.lineEdit.setMinimumSize(QSize(0, 32))
-#         self.lineEdit.setMaximumSize(QSize(16777215, 32))
-#         font4 = QFont()
-#         font4.setFamily(u"Segoe Script")
-#         font4.setPointSize(11)
-#         font4.setBold(False)
-#         font4.setWeight(50)
-#         self.lineEdit.setFont(font4)
-
-#         self.horizontalLayout_3.addWidget(self.lineEdit)
-
-#         self.pushButton_2 = QPushButton(self.horizontalLayoutWidget_3)
-#         self.pushButton_2.setObjectName(u"pushButton_2")
-#         self.pushButton_2.setMinimumSize(QSize(0, 32))
-#         self.pushButton_2.setMaximumSize(QSize(16777215, 32))
-#         self.pushButton_2.setCursor(QCursor(Qt.PointingHandCursor))
-
-#         self.horizontalLayout_3.addWidget(self.pushButton_2)
-
-#         self.verticalLayoutWidget_5 = QWidget(self.centralwidget)
-#         self.verticalLayoutWidget_5.setObjectName(u"verticalLayoutWidget_5")
-#         self.verticalLayoutWidget_5.setGeometry(QRect(410, 10, 160, 41))
-#         self.verticalLayout_3 = QVBoxLayout(self.verticalLayoutWidget_5)
-#         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-#         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
-#         self.Status = QLabel(self.verticalLayoutWidget_5)
-#         self.Status.setObjectName(u"Status")
-#         self.Status.setFont(font3)
-#         self.Status.setStyleSheet(u"color:  #cae9ff; \n"
-# "background-color: none;")
-
-#         self.verticalLayout_3.addWidget(self.Status)
-
-#         self.label_3 = QLabel(self.centralwidget)
-#         self.label_3.setObjectName(u"label_3")
-#         self.label_3.setGeometry(QRect(370, 20, 21, 21))
-#         self.label_3.setCursor(QCursor(Qt.PointingHandCursor))
-#         self.label_3.setPixmap(QPixmap(u"Refresh.png"))
-#         self.label_3.setScaledContents(True)
-#         self.circularProgressBar_Main = QFrame(self.centralwidget)
-#         self.circularProgressBar_Main.setObjectName(u"circularProgressBar_Main")
-#         self.circularProgressBar_Main.setGeometry(QRect(360, 170, 240, 240))
-#         self.circularProgressBar_Main.setStyleSheet(u"background-color: none;")
-#         self.circularProgressBar_Main.setFrameShape(QFrame.NoFrame)
-#         self.circularProgressBar_Main.setFrameShadow(QFrame.Raised)
-#         self.circularProgressCPU = QFrame(self.circularProgressBar_Main)
-#         self.circularProgressCPU.setObjectName(u"circularProgressCPU")
-#         self.circularProgressCPU.setGeometry(QRect(10, 10, 220, 220))
-#         self.circularProgressCPU.setStyleSheet(u"QFrame{\n"
-# "	border-radius: 110px;	\n"
-# "	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:90, stop:0.400 rgba(85, 170, 255, 255), stop:0.395 rgba(255, 255, 255, 0));\n"
-# "}")
-#         self.circularProgressCPU.setFrameShape(QFrame.StyledPanel)
-#         self.circularProgressCPU.setFrameShadow(QFrame.Raised)
-#         self.circularBg = QFrame(self.circularProgressBar_Main)
-#         self.circularBg.setObjectName(u"circularBg")
-#         self.circularBg.setGeometry(QRect(10, 10, 220, 220))
-#         self.circularBg.setStyleSheet(u"QFrame{\n"
-# "	border-radius: 110px;	\n"
-# "	background-color: rgba(85, 85, 127, 100);\n"
-# "}")
-#         self.circularBg.setFrameShape(QFrame.StyledPanel)
-#         self.circularBg.setFrameShadow(QFrame.Raised)
-#         self.circularContainer = QFrame(self.circularProgressBar_Main)
-#         self.circularContainer.setObjectName(u"circularContainer")
-#         self.circularContainer.setGeometry(QRect(25, 25, 190, 190))
-#         self.circularContainer.setBaseSize(QSize(0, 0))
-#         self.circularContainer.setStyleSheet(u"QFrame{\n"
-# "	border-radius: 95px;	\n"
-# "	background-color: rgb(58, 58, 102);\n"
-# "}")
-#         self.circularContainer.setFrameShape(QFrame.StyledPanel)
-#         self.circularContainer.setFrameShadow(QFrame.Raised)
-#         self.layoutWidget = QWidget(self.circularContainer)
-#         self.layoutWidget.setObjectName(u"layoutWidget")
-#         self.layoutWidget.setGeometry(QRect(10, 40, 171, 145))
-#         self.infoLayout = QGridLayout(self.layoutWidget)
-#         self.infoLayout.setObjectName(u"infoLayout")
-#         self.infoLayout.setContentsMargins(0, 0, 0, 0)
-#         self.labelAplicationName = QLabel(self.layoutWidget)
-#         self.labelAplicationName.setObjectName(u"labelAplicationName")
-#         font5 = QFont()
-#         font5.setFamily(u"Segoe UI")
-#         self.labelAplicationName.setFont(font5)
-#         self.labelAplicationName.setStyleSheet(u"color: #FFFFFF; background-color: none;")
-#         self.labelAplicationName.setAlignment(Qt.AlignCenter)
-
-#         self.infoLayout.addWidget(self.labelAplicationName, 0, 0, 1, 1)
-
-#         self.labelPercentageCPU = QLabel(self.layoutWidget)
-#         self.labelPercentageCPU.setObjectName(u"labelPercentageCPU")
-#         font6 = QFont()
-#         font6.setFamily(u"Roboto Thin")
-#         self.labelPercentageCPU.setFont(font6)
-#         self.labelPercentageCPU.setStyleSheet(u"color: rgb(115, 185, 255); padding: 0px; background-color: none;")
-#         self.labelPercentageCPU.setAlignment(Qt.AlignCenter)
-#         self.labelPercentageCPU.setIndent(-1)
-
-#         self.infoLayout.addWidget(self.labelPercentageCPU, 1, 0, 1, 1)
-
-#         self.labelCredits = QLabel(self.layoutWidget)
-#         self.labelCredits.setObjectName(u"labelCredits")
-#         self.labelCredits.setFont(font5)
-#         self.labelCredits.setStyleSheet(u"color: rgb(148, 148, 216); background-color: none;")
-#         self.labelCredits.setAlignment(Qt.AlignCenter)
-
-#         self.infoLayout.addWidget(self.labelCredits, 2, 0, 1, 1)
-
-#         self.circularBg.raise_()
-#         self.circularProgressCPU.raise_()
-#         self.circularContainer.raise_()
-#         self.FileInfo = QLabel(self.centralwidget)
-#         self.FileInfo.setObjectName(u"FileInfo")
-#         self.FileInfo.setGeometry(QRect(20, 430, 131, 31))
-#         font7 = QFont()
-#         font7.setFamily(u"SWItalt")
-#         font7.setBold(False)
-#         font7.setWeight(50)
-#         self.FileInfo.setFont(font7)
-#         self.FileInfo.setStyleSheet(u"color: #fb8500;\n"
-# "font-size:8 !important\n"
-# ";")
-    
-
-#         FSO_SENDER.setCentralWidget(self.centralwidget)
-#         self.statusbar = QStatusBar(FSO_SENDER)
-#         self.statusbar.setObjectName(u"statusbar")
-#         FSO_SENDER.setStatusBar(self.statusbar)
-
-#         self.retranslateUi(FSO_SENDER)
-
-#         QMetaObject.connectSlotsByName(FSO_SENDER)
-#     # setupUi
-
-#     def retranslateUi(self, FSO_SENDER):
-#         FSO_SENDER.setWindowTitle(QCoreApplication.translate("FSO_SENDER", u"FSO_SENDER", None))
-#         self.ConnectButton.setText(QCoreApplication.translate("FSO_SENDER", u"Connect", None))
-#         self.textEdit.setHtml(QCoreApplication.translate("FSO_SENDER", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-# "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-# "p, li { white-space: pre-wrap; }\n"
-# "</style></head><body style=\" font-family:'Terminal'; font-size:14pt; font-weight:600; font-style:normal;\">\n"
-# "<p style=\"-qt-paragraph-type:empty; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Terminal','Segoe Script';\"><br /></p></body></html>", None))
-# #if QT_CONFIG(accessibility)
-#         self.label.setAccessibleDescription(QCoreApplication.translate("FSO_SENDER", u"0", None))
-# #endif // QT_CONFIG(accessibility)
-#         self.label.setText(QCoreApplication.translate("FSO_SENDER", u"Input Section", None))
-#         self.Text_Mode.setText(QCoreApplication.translate("FSO_SENDER", u"Text Mode", None))
-#         self.pushButton.setText(QCoreApplication.translate("FSO_SENDER", u"File Mode", None))
-#         self.Upload_Button.setText(QCoreApplication.translate("FSO_SENDER", u"Upload", None))
-# #if QT_CONFIG(accessibility)
-#         self.label_2.setAccessibleDescription(QCoreApplication.translate("FSO_SENDER", u"0", None))
-# #endif // QT_CONFIG(accessibility)
-#         self.label_2.setText(QCoreApplication.translate("FSO_SENDER", u"Monitoring Section", None))
-#         self.lineEdit.setText(QCoreApplication.translate("FSO_SENDER", u"  Select A file. png or txt", None))
-#         self.pushButton_2.setText(QCoreApplication.translate("FSO_SENDER", u"Select", None))
-#         self.Status.setText(QCoreApplication.translate("FSO_SENDER", u"Not conected", None))
-#         self.label_3.setText("")
-#         self.labelAplicationName.setText(QCoreApplication.translate("FSO_SENDER", u"<html><head/><body><p>% completion</p></body></html>", None))
-#         self.labelPercentageCPU.setText(QCoreApplication.translate("FSO_SENDER", u"<p align=\"center\"><span style=\" font-size:50pt;\">60</span><span style=\" font-size:40pt; vertical-align:super;\">%</span></p>", None))
-#         self.labelCredits.setText(QCoreApplication.translate("FSO_SENDER", u"<html><head/><body><p><span style=\" font-size:11pt;\">Speed:</span><span style=\" font-size:11pt; color:#ffffff;\"> 2Kb/s</span></p></body></html>", None))
-#         self.FileInfo.setText("")
-#         self.label_5.setText(QCoreApplication.translate("FSO_SENDER", u"Size: ", None))
-#         self.label_4.setText(QCoreApplication.translate("FSO_SENDER", u"100 Mb", None))
-#     # retranslateUi
-
