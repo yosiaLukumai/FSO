@@ -1,11 +1,325 @@
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
+from PyQt5.QtCore import QThread, pyqtSignal
 import sys
 import serial
 import serial.tools
 import serial.tools.list_ports
 import os
+import time
+
+
+# class DataSender(QThread):
+#     # Signal to update progress in the main thread
+#     progress = pyqtSignal(int)
+#     finished = pyqtSignal()
+#     error_occurred = pyqtSignal(str)
+#     file_size = pyqtSignal(str)
+#     speed_signal = pyqtSignal(float)
+
+#     def __init__(self, mode, com_port=None, file_path=None, text_data=None, baudrate=115200, chunk_size=1024):
+#         super().__init__()
+#         self.mode = mode  # 1 for file mode, 0 for text mode
+#         self.com_port = com_port
+#         self.file_path = file_path
+#         self.text_data = text_data
+#         self.baudrate = baudrate
+#         self.chunk_size = chunk_size
+#         self.serial_port = None  # This will hold the serial connection
+
+#     def create_header(self, file_type, file_size, chunk_size):
+#         header = f"{file_type}|{file_size}|{chunk_size}\n"  # Using | as a delimiter
+#         return header.encode('utf-8')  # Return encoded header
+
+
+#     def set_com_port(self):
+#         """ Set up the serial port connection. """
+#         if self.com_port is None:
+#             self.error_occurred.emit("No COM port provided.")
+#             return False
+
+#         try:
+#             # Set the serial port (replace baudrate with your preferred rate)
+#             self.serial_port = serial.Serial(self.com_port, baudrate=self.baudrate, timeout=1)
+#             return True
+#         except Exception as e:
+#             self.error_occurred.emit(f"Error connecting to {self.com_port}: {str(e)}")
+#             return False
+    
+#     def format_size(self, bytes_size):
+#         """
+#         Convert the size from bytes to KB, MB, or GB, depending on its magnitude.
+#         :param bytes_size: Size in bytes
+#         :return: Formatted string with the size in KB, MB, or GB
+#         """
+#         # Convert bytes to kilobytes
+#         kb_size = bytes_size / 1024
+
+#         if kb_size < 1000:
+#             # If size is less than 1000 KB, return in KB
+#             return f"{kb_size:.2f} KB"
+        
+#         # Convert kilobytes to megabytes
+#         mb_size = kb_size / 1024
+
+#         if mb_size < 1000:
+#             # If size is less than 1000 MB, return in MB
+#             return f"{mb_size:.2f} MB"
+        
+#         # Convert megabytes to gigabytes
+#         gb_size = mb_size / 1024
+
+#         # Return the size in GB
+#         return f"{gb_size:.2f} GB"
+    
+#     def size_file(self):
+#         return self.format_size(os.path.getsize(self.file_path)) if self.mode == 1 else self.format_size(self.text_data.encode('utf-8'))
+
+
+
+#     def run(self):
+#         """ Main function run in the thread. """
+#         if not self.set_com_port():
+#             return  # Exit if COM port couldn't be set up
+
+#         try:
+#             if self.mode == 1:
+#                 self.send_file()
+#             else:
+#                 self.send_text()
+#         except Exception as e:
+#             print(e)
+#             self.error_occurred.emit(f"Error: {str(e)}")
+#         finally:
+#             # Ensure the serial port is closed when done
+#             if self.serial_port is not None:
+#                 self.serial_port.close()
+#             self.finished.emit()
+
+#     def send_file(self):
+#         if self.file_path is None:
+#             self.error_occurred.emit("No file selected.")
+#             return
+
+#         # Get file size
+#         file_size = os.path.getsize(self.file_path)
+#         print(f" Size: {self.format_size(file_size)}")
+#         self.file_size.emit(str(self.format_size(file_size)))
+#         total_chunks = file_size // self.chunk_size + (1 if file_size % self.chunk_size != 0 else 0)
+#         print(f"Sending file of size {file_size} bytes in {total_chunks} chunks.")
+#         start_time = time.time()
+#         bytes_sent = 0
+
+#         with open(self.file_path, 'rb') as file:
+#             for chunk_index in range(total_chunks):
+#                 content = file.read(self.chunk_size)
+#                 print(f"content: {content}")
+#                 self.serial_port.write(content)
+#                 bytes_sent += len(content)  # Track total bytes sent
+
+#                 # Calculate elapsed time
+#                 elapsed_time = time.time() - start_time
+#                 if elapsed_time > 0:  # Avoid division by zero
+#                     speed = bytes_sent / elapsed_time  # Bytes per second
+#                     self.speed_signal.emit(speed)  # Emit speed
+#                 self.progress.emit(int((chunk_index + 1) / total_chunks * 100))
+
+    
+  
+
+#     def send_text(self):
+#         if self.text_data is None:
+#             self.error_occurred.emit("No text data provided.")
+#             return
+
+#         # Start time for speed calculation
+#         start_time = time.time()
+#         bytes_sent = 0  # Initialize total bytes sent
+
+#         # Encode text
+#         text_data = self.text_data.encode('utf-8')  # Encode the text
+#         text_size = len(text_data)  # Get size in bytes
+#         self.file_size.emit(str(self.format_size(text_size)))  # Emit the file size
+#         total_chunks = text_size // self.chunk_size + (1 if text_size % self.chunk_size != 0 else 0)
+#         print(f"Sending text of size {text_size} bytes in {total_chunks} chunks.")
+
+#         for chunk_index in range(total_chunks):
+#             # Slice the text data into chunks
+#             chunk = text_data[chunk_index * self.chunk_size:(chunk_index + 1) * self.chunk_size]
+#             self.serial_port.write(chunk)  # Send the chunk
+#             bytes_sent += len(chunk)  # Track total bytes sent
+
+#             # Calculate elapsed time
+#             elapsed_time = time.time() - start_time
+#             if elapsed_time > 0:  # Avoid division by zero
+#                 speed_kbps = bytes_sent  / elapsed_time  # Convert to KB/s
+#                 self.speed_signal.emit(speed_kbps)  # Emit speed in KB/s
+
+#             # Emit progress
+#             self.progress.emit(int((chunk_index + 1) / total_chunks * 100))
+
+
+class DataSender(QThread):
+    # Signal to update progress in the main thread
+    progress = pyqtSignal(int)
+    finished = pyqtSignal()
+    error_occurred = pyqtSignal(str)
+    file_size = pyqtSignal(str)
+    speed_signal = pyqtSignal(float)
+
+    def __init__(self, mode, com_port=None, file_path=None, text_data=None, baudrate=115200, chunk_size=1024):
+        super().__init__()
+        self.mode = mode  # 1 for file mode, 0 for text mode
+        self.com_port = com_port
+        self.file_path = file_path
+        self.text_data = text_data
+        self.baudrate = baudrate
+        self.chunk_size = chunk_size
+        self.serial_port = None  # This will hold the serial connection
+
+    def create_header(self, file_type, file_size, chunk_size):
+        """
+        Create a header string that contains file information.
+        Format: "HEADER|FILE_TYPE:<file_type>|FILE_SIZE:<file_size>|CHUNK_SIZE:<chunk_size>|END_HEADER\n"
+        """
+        header = f"HEADER|FILE_TYPE:{file_type}|FILE_SIZE:{file_size}|CHUNK_SIZE:{chunk_size}|END_HEADER\n"
+        return header.encode('utf-8')  # Return encoded header
+
+    def set_com_port(self):
+        """ Set up the serial port connection. """
+        if self.com_port is None:
+            self.error_occurred.emit("No COM port provided.")
+            return False
+
+        try:
+            # Set the serial port (replace baudrate with your preferred rate)
+            self.serial_port = serial.Serial(self.com_port, baudrate=self.baudrate, timeout=1)
+            return True
+        except Exception as e:
+            self.error_occurred.emit(f"Error connecting to {self.com_port}: {str(e)}")
+            return False
+
+    def format_size(self, bytes_size):
+        """
+        Convert the size from bytes to KB, MB, or GB, depending on its magnitude.
+        :param bytes_size: Size in bytes
+        :return: Formatted string with the size in KB, MB, or GB
+        """
+        # Convert bytes to kilobytes
+        kb_size = bytes_size / 1024
+
+        if kb_size < 1000:
+            # If size is less than 1000 KB, return in KB
+            return f"{kb_size:.2f} KB"
+        
+        # Convert kilobytes to megabytes
+        mb_size = kb_size / 1024
+
+        if mb_size < 1000:
+            # If size is less than 1000 MB, return in MB
+            return f"{mb_size:.2f} MB"
+        
+        # Convert megabytes to gigabytes
+        gb_size = mb_size / 1024
+
+        # Return the size in GB
+        return f"{gb_size:.2f} GB"
+
+    def get_file_size(self):
+        """ Return the size of the file or text data. """
+        return os.path.getsize(self.file_path) if self.mode == 1 else len(self.text_data.encode('utf-8'))
+
+    def run(self):
+        """ Main function run in the thread. """
+        if not self.set_com_port():
+            return  # Exit if COM port couldn't be set up
+
+        try:
+            # Create header based on the mode (file or text)
+            file_type = "csv" if self.mode == 1 else "text"
+            file_size = self.get_file_size()
+            header = self.create_header(file_type, file_size, self.chunk_size)
+
+            # Send the header first
+            self.serial_port.write(header)
+            # time.sleep(2)
+            print(f"Header sent: {header.decode('utf-8')}")
+
+            if self.mode == 1:
+                self.send_file()
+            else:
+                self.send_text()
+        except Exception as e:
+            print(e)
+            self.error_occurred.emit(f"Error: {str(e)}")
+        finally:
+            # Ensure the serial port is closed when done
+            if self.serial_port is not None:
+                self.serial_port.close()
+            self.finished.emit()
+
+    def send_file(self):
+        """Send file data in chunks after sending the header."""
+        if self.file_path is None:
+            self.error_occurred.emit("No file selected.")
+            return
+
+        # Get file size
+        file_size = os.path.getsize(self.file_path)
+        print(f"Size: {self.format_size(file_size)}")
+        self.file_size.emit(str(self.format_size(file_size)))
+        total_chunks = file_size // self.chunk_size + (1 if file_size % self.chunk_size != 0 else 0)
+        print(f"Sending file of size {file_size} bytes in {total_chunks} chunks.")
+        start_time = time.time()
+        bytes_sent = 0
+
+        with open(self.file_path, 'rb') as file:
+            for chunk_index in range(total_chunks):
+                content = file.read(self.chunk_size)
+                # print(f"Sending chunk: {content[:50]}...")  # Print the first 50 bytes of the chunk
+                self.serial_port.write(content)
+                bytes_sent += len(content)  # Track total bytes sent
+
+                # Calculate elapsed time
+                elapsed_time = time.time() - start_time
+                if elapsed_time > 0:  # Avoid division by zero
+                    speed = bytes_sent / elapsed_time  # Bytes per second
+                    self.speed_signal.emit(speed)  # Emit speed
+                self.progress.emit(int((chunk_index + 1) / total_chunks * 100))
+
+    def send_text(self):
+        """Send text data in chunks after sending the header."""
+        if self.text_data is None:
+            self.error_occurred.emit("No text data provided.")
+            return
+
+        # Start time for speed calculation
+        start_time = time.time()
+        bytes_sent = 0  # Initialize total bytes sent
+
+        # Encode text
+        text_data = self.text_data.encode('utf-8')  # Encode the text
+        text_size = len(text_data)  # Get size in bytes
+        self.file_size.emit(str(self.format_size(text_size)))  # Emit the file size
+        total_chunks = text_size // self.chunk_size + (1 if text_size % self.chunk_size != 0 else 0)
+        print(f"Sending text of size {text_size} bytes in {total_chunks} chunks.")
+
+        for chunk_index in range(total_chunks):
+            # Slice the text data into chunks
+            chunk = text_data[chunk_index * self.chunk_size:(chunk_index + 1) * self.chunk_size]
+            print(f"Sending chunk: {chunk[:50]}...")  # Print the first 50 bytes of the chunk
+            self.serial_port.write(chunk)  # Send the chunk
+            bytes_sent += len(chunk)  # Track total bytes sent
+
+            # Calculate elapsed time
+            elapsed_time = time.time() - start_time
+            if elapsed_time > 0:  # Avoid division by zero
+                speed_kbps = bytes_sent / elapsed_time  # Bytes per second
+                self.speed_signal.emit(speed_kbps)  # Emit speed
+
+            # Emit progress
+            self.progress.emit(int((chunk_index + 1) / total_chunks * 100))
 
 
 class MyDialog(QDialog):
@@ -345,6 +659,7 @@ class Ui_FSO_SENDER(object):
         self.AvailableComports = []
         self.OperationMode = 1 # [1: FileMode, 2: TextMode]
         self.ConnecteCompin = False
+        self.workingComportName = ""
         self.ObtainSerialPort()
         self.WorkinComport = None
         
@@ -364,12 +679,14 @@ class Ui_FSO_SENDER(object):
             ThereComport = True
         else:
             self.Status.setText(" No comport")
-        try:
-            SerialPort = self.ComportSelector.currentText()
-            if ThereComport:
-                self.WorkinComport = serial.Serial(port=SerialPort,baudrate=1000000,timeout=1)
-        except Exception as e:
-            pass
+        
+        self.workingComportName = self.ComportSelector.currentText()
+        # try:
+        #     SerialPort = self.ComportSelector.currentText()
+        #     if ThereComport:
+        #         self.WorkinComport = serial.Serial(port=SerialPort,baudrate=115200,timeout=1)
+        # except Exception as e:
+        #     pass
 
     def openSelectFileDialog(self):
         options = QFileDialog.Options()
@@ -431,6 +748,36 @@ class Ui_FSO_SENDER(object):
     def EnableFuncs(self):
         pass
 
+    def progressBarValue(self, value, widget, color):
+
+        # PROGRESSBAR STYLESHEET BASE
+        styleSheet = """
+        QFrame{
+        	border-radius: 110px;
+        	background-color: qconicalgradient(cx:0.5, cy:0.5, angle:90, stop:{STOP_1} rgba(255, 0, 127, 0), stop:{STOP_2} {COLOR});
+        }
+        """
+
+        # GET PROGRESS BAR VALUE, CONVERT TO FLOAT AND INVERT VALUES
+        # stop works of 1.000 to 0.000
+        progress = (100 - value) / 100.0
+
+        # GET NEW VALUES
+        stop_1 = str(progress - 0.001)
+        stop_2 = str(progress)
+
+        # FIX MAX VALUE
+        if value == 100:
+            stop_1 = "1.000"
+            stop_2 = "1.000"
+
+        # SET VALUES TO NEW STYLESHEET
+
+        newStylesheet = styleSheet.replace("{STOP_1}", stop_1).replace("{STOP_2}", stop_2).replace("{COLOR}", color)
+
+        # APPLY STYLESHEET WITH NEW VALUES
+        widget.setStyleSheet(newStylesheet)
+
 
     def UploadProcess(self):
         # Update on the port selected and used..
@@ -446,13 +793,22 @@ class Ui_FSO_SENDER(object):
                     self.AlertDialog.setWindowTitle("Error")
                     self.AlertDialog.setTextResult(" ERR: Please Choose File or Write Text first..  ")
                     self.AlertDialog.center(mainWindow)
-                    self.AlertDialog.exec_()  
+                    self.AlertDialog.exec_()
+                return
+
+            if self.workingComportName == "" or self.workingComportName == None:
+                self.AlertDialog.setWindowTitle("Error")
+                self.AlertDialog.setTextResult(" Hooray: Select serial port.  ")
+                self.AlertDialog.center(mainWindow)
+                self.AlertDialog.exec_()
+                return
+
 
             else:
+                print(self.ComportSelector.currentText())
                 SerialPort = self.ComportSelector.currentText() 
-                print("reached...")
-                print(self.WorkinComport.name)
-                if self.WorkinComport  == None or (self.WorkinComport.name != SerialPort):
+                # if self.WorkinComport  == None or (self.WorkinComport.name != SerialPort):
+                if SerialPort == "":
                     print(SerialPort, self.WorkinComport.name(), self.WorkinComport)
                     self.AlertDialog.setWindowTitle("Error")
                     self.AlertDialog.setTextResult(" ERR: Connect first Comport")
@@ -466,24 +822,67 @@ class Ui_FSO_SENDER(object):
                     # deal with file uploading process
                     if self.workingFile == "":
                         self.AlertDialog.setWindowTitle("Error")
-                        self.AlertDialog.setTextResult(" ERR: Select File First ")
+                        self.AlertDialog.setTextResult(" ERR: Select File First")
                         self.AlertDialog.center(mainWindow)
                         self.AlertDialog.exec_()
+                        return
                     else:
-                        try: 
-                            size = os.path.getsize(self.workingFile)
-                            self.label_4.setText(f"{size / 102400} Kb")
-                            with open(self.workingFile, 'rb') as file:
-                                while(content := file.read(102400)):
-                                    self.WorkinComport.write(content)
+                        try:
+                            self.worker = DataSender(mode=self.OperationMode, com_port=self.workingComportName, file_path=self.workingFile)
+                            self.worker.progress.connect(self.update_progress)
+                            self.worker.finished.connect(self.transfer_finished)
+                            self.worker.error_occurred.connect(self.show_error)
+                            self.worker.speed_signal.connect(self.update_speed)
+                            self.worker.file_size.connect(self.file_size)
+                            self.worker.start()
+                            # size = os.path.getsize(self.workingFile)
+                            # self.label_4.setText(self.format_size(size/1024))
+                            # with open(self.workingFile, 'rb') as file:
+                            #     while(content := file.read(102400)):
+                            #         self.WorkinComport.write(content)
                     
                         except Exception as e:
+                            print(e)
                             self.AlertDialog.setWindowTitle("Error")
                             self.AlertDialog.setTextResult(" ERR: Something Went Wrong while trying to Read File.. Retry ")
                             self.AlertDialog.center(mainWindow)
-                            self.AlertDialog.exec_()          
+                            self.AlertDialog.exec_()
+                                     
                 else:
-                    pass
+                    if len(self.textEdit.toPlainText()) > 20:
+                        try:
+                            # textData = self.textEdit.toPlainText().encode('utf-8')
+                            # text_size_bytes = len(textData)
+                            # text_size_kb = text_size_bytes / 1024
+                            # formatted = self.format_size(text_size_kb)
+                            # print(formatted)
+                            # self.label_4.setText(formatted)
+                            # print(self.OperationMode)
+                            self.worker = DataSender(mode=self.OperationMode, com_port=self.workingComportName, text_data=self.textEdit.toPlainText())
+                            self.worker.progress.connect(self.update_progress)
+                            self.worker.finished.connect(self.transfer_finished)
+                            self.worker.error_occurred.connect(self.show_error)
+                            self.worker.speed_signal.connect(self.update_speed)
+                            self.worker.file_size.connect(self.file_size)
+                            self.worker.start()
+
+                            
+                            # chunk_size = 1024
+                            # # Loop through the text and send it in chunks
+                            # for i in range(0, len(textData), chunk_size):
+                            #     chunk = textData[i:i + chunk_size]
+                            #     self.WorkinComport.write(chunk)
+                        except Exception as e:
+                            print("Error in the ")
+                            print(e)
+                    else:
+                        self.AlertDialog.setWindowTitle("Error")
+                        self.AlertDialog.setTextResult(" Hooray: Increase the text count ")
+                        self.AlertDialog.center(mainWindow)
+                        self.AlertDialog.exec_()
+
+
+
                         
         except Exception as e:
             print("it's her.....")
@@ -523,6 +922,28 @@ class Ui_FSO_SENDER(object):
             self.FileMode()
         else:
             self.TextMode()
+    def update_progress(self, value):
+        self.labelPercentageCPU.setText(str(value))
+        self.progressBarValue(color="rgba(85, 170, 255, 255)", widget=self.circularProgressCPU, value=value)
+
+    def transfer_finished(self):
+        print("Status: Transfer Complete")
+
+    def show_error(self, error_message):
+        self.AlertDialog.setWindowTitle("Error")
+        self.AlertDialog.setTextResult(error_message)
+        self.AlertDialog.center(mainWindow)
+        self.AlertDialog.exec_()
+    
+    def file_size(self, size):
+        print("size")
+        print(size)
+        self.label_4.setText(size)
+
+    def update_speed(self, speed):
+        speed_kbps = speed / 1024
+        self.labelCredits.setText(f"{speed_kbps:.2f} KB/s")
+
     def CleanResources(self):
         try:
             self.WorkinComport.close()
@@ -544,11 +965,11 @@ class Ui_FSO_SENDER(object):
         self.pushButton_2.setText(QCoreApplication.translate("FSO_SENDER", u"Select", None))
         self.Status.setText(QCoreApplication.translate("FSO_SENDER", u"Not conected", None))
         self.labelAplicationName.setText(QCoreApplication.translate("FSO_SENDER", u"<html><head/><body><p>% completion</p></body></html>", None))
-        self.labelPercentageCPU.setText(QCoreApplication.translate("FSO_SENDER", u"<p align=\"center\"><span style=\" font-size:50pt;\">60</span><span style=\" font-size:40pt; vertical-align:super;\">%</span></p>", None))
-        self.labelCredits.setText(QCoreApplication.translate("FSO_SENDER", u"<html><head/><body><p><span style=\" font-size:11pt;\">Speed:</span><span style=\" font-size:11pt; color:#ffffff;\"> 2Kb/s</span></p></body></html>", None))
+        self.labelPercentageCPU.setText(QCoreApplication.translate("FSO_SENDER", u"<p align=\"center\"><span style=\" font-size:50pt;\">0</span><span style=\" font-size:40pt; vertical-align:super;\">%</span></p>", None))
+        self.labelCredits.setText(QCoreApplication.translate("FSO_SENDER", u"<html><head/><body><p><span style=\" font-size:11pt;\">Speed:</span><span style=\" font-size:11pt; color:#ffffff;\"> 0Kb/s</span></p></body></html>", None))
         self.pushButton_3.setText("")
         self.label_5.setText(QCoreApplication.translate("FSO_SENDER", u"Size: ", None))
-        self.label_4.setText(QCoreApplication.translate("FSO_SENDER", u"100 Mb", None))
+        self.label_4.setText(QCoreApplication.translate("FSO_SENDER", u"0 Kbs", None))
 
 
 
