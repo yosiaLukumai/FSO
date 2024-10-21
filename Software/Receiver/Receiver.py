@@ -38,7 +38,7 @@ class DataReceiverWorker(QObject):
         self.expected_file_type = "" 
         self.received_data = b"" 
         self.header_buffer = ""
-        self.in_header = True  
+        self.in_header = False  
         self.timeout_duration = 5
         self.errorSize = 0
         self.last_received_time = time.time()
@@ -82,73 +82,82 @@ class DataReceiverWorker(QObject):
         while self.is_running:
             if self.serial_port.waitForReadyRead(100):  # Wait for data to be ready (timeout = 100 ms)
                 data = self.serial_port.readAll()  # Read all available data
+                try:
+                    decoded_data = data.data().decode('utf-8', errors='replace')
+                    self.data_received.emit(decoded_data)
 
-                if data:  # If data is received, process it
-                    self.last_received_time = time.time()
-                    # If we're still in the header stage
-                    if self.in_header:
-                        # Accumulate the header data
-                        header_data = data.data().decode('utf-8', errors='replace')
-                        self.header_buffer += header_data
-                        # print(f"Received header chunk: {header_data}")
-
-                        # Check if the header has ended
-                        if "END_HEADER" in self.header_buffer:
-                            # Parse the complete header until the end marker
-                            header_end_idx = self.header_buffer.index("END_HEADER") + len("END_HEADER")
-                            complete_header = self.header_buffer[:header_end_idx]
-
-                            # Parse the header fields
-                            header_fields = complete_header.split('|')
-                            for field in header_fields:
-                                if "FILE_SIZE" in field:
-                                    self.expected_file_size = int(field.split(':')[1])
-                                    print(f"Expected File Size: {self.expected_file_size} bytes")
-                                    self.fileSizeSignal.emit(self.format_size(self.expected_file_size))
-                                if "FILE_TYPE" in field:
-                                    self.expected_file_type = field.split(':')[1]
-                                    self.fileTypeSignal.emit(self.expected_file_type)
-                                    # print(self.expected_file_type)
-
-                            # Set `self.in_header` to False to move to data receiving stage
-                            self.in_header = False
-
-                            # Append any remaining data after the header into the main data buffer
-                            remaining_data = self.header_buffer[header_end_idx:].encode('utf-8')
-                            self.received_data += remaining_data
-                            print(f"Remaining data added: {len(remaining_data)} bytes")
-                            self.header_buffer = ""
-                            self.progress.emit(0)
-                        continue  
-
-                    # If header has been processed, receive the file data
-                    self.received_data += data  # Append the received data to the buffer
-                    print(f"Data received so far: {len(self.received_data)} bytes")
-                    progress_percent = int(len(self.received_data) / self.expected_file_size * 100)
-                    self.progress.emit(progress_percent)
-
-                    # Check if the received data has reached the expected file size
-                    if len(self.received_data) >= self.expected_file_size:
-                        print("Complete file received.")
-                        # Emit the complete data as a string after decoding
-                        try:
-                            decoded_data = self.received_data.decode('utf-8', errors='replace')
-                            self.data_received.emit(decoded_data)
-                        except UnicodeDecodeError as e:
-                            # Handle any decoding errors and emit the error message
-                            self.error_occurred.emit(f"Decoding error: {e}")
-                        break  # Exit the loop once the complete file is received
-
-            if (time.time() - self.last_received_time > self.timeout_duration) and not self.in_header:
-                if len(self.received_data) < self.expected_file_size:
-                    self.errorSize = self.expected_file_size - len(self.received_data)
-                    self.error_occurred.emit("Error: Data transfer incomplete. Possible data loss.")
-
-                else:
-                    print("Data transfer completed without errors.")
+                except Exception as e:
+                    pass
                 
-                print("emmitiing there was some error")
-                self.errorSignal.emit(self.errorSize)
+
+            #     if data:  # If data is received, process it
+            #         self.last_received_time = time.time()
+            #         # If we're still in the header stage
+            #         if self.in_header:
+            #             # Accumulate the header data
+            #             header_data = data.data().decode('utf-8', errors='replace')
+            #             self.header_buffer += header_data
+            #             # print(f"Received header chunk: {header_data}")
+
+            #             # Check if the header has ended
+            #             if "END_HEADER" in self.header_buffer:
+            #                 # Parse the complete header until the end marker
+            #                 header_end_idx = self.header_buffer.index("END_HEADER") + len("END_HEADER")
+            #                 complete_header = self.header_buffer[:header_end_idx]
+
+            #                 # Parse the header fields
+            #                 header_fields = complete_header.split('|')
+            #                 for field in header_fields:
+            #                     if "FILE_SIZE" in field:
+            #                         self.expected_file_size = int(field.split(':')[1])
+            #                         print(f"Expected File Size: {self.expected_file_size} bytes")
+            #                         self.fileSizeSignal.emit(self.format_size(self.expected_file_size))
+            #                     if "FILE_TYPE" in field:
+            #                         self.expected_file_type = field.split(':')[1]
+            #                         self.fileTypeSignal.emit(self.expected_file_type)
+            #                         # print(self.expected_file_type)
+
+            #                 # Set `self.in_header` to False to move to data receiving stage
+            #                 self.in_header = False
+
+            #                 # Append any remaining data after the header into the main data buffer
+            #                 remaining_data = self.header_buffer[header_end_idx:].encode('utf-8')
+            #                 self.received_data += remaining_data
+            #                 print(f"Remaining data added: {len(remaining_data)} bytes")
+            #                 self.header_buffer = ""
+            #                 self.progress.emit(0)
+            #             continue  
+
+            #         # If header has been processed, receive the file data
+            #         self.received_data += data  # Append the received data to the buffer
+            #         decoded_data = data.data().decode('utf-8', errors='replace')
+            #         self.data_received.emit(decoded_data)
+            #         print(f"Data received so far: {len(self.received_data)} bytes")
+            #         progress_percent = int(len(self.received_data) / self.expected_file_size * 100)
+            #         self.progress.emit(progress_percent)
+
+            #         # Check if the received data has reached the expected file size
+            #         if len(self.received_data) >= self.expected_file_size:
+            #             print("Complete file received.")
+            #             # Emit the complete data as a string after decoding
+            #             try:
+            #                 decoded_data = self.received_data.decode('utf-8', errors='replace')
+            #                 self.data_received.emit(decoded_data)
+            #             except UnicodeDecodeError as e:
+            #                 # Handle any decoding errors and emit the error message
+            #                 self.error_occurred.emit(f"Decoding error: {e}")
+            #             break  # Exit the loop once the complete file is received
+
+            # if (time.time() - self.last_received_time > self.timeout_duration) and not self.in_header:
+            #     if len(self.received_data) < self.expected_file_size:
+            #         self.errorSize = self.expected_file_size - len(self.received_data)
+            #         self.error_occurred.emit("Error: Data transfer incomplete. Possible data loss.")
+
+            #     else:
+            #         print("Data transfer completed without errors.")
+                
+            #     print("emmitiing there was some error")
+            #     self.errorSignal.emit(self.errorSize)
 
         # Close the serial port and signal that the thread has finished
         self.serial_port.close()
@@ -572,9 +581,7 @@ class Ui_FSO_SENDER(object):
     def errorSignalSize(self, size:int):
         """Show an error message to the user."""
         print(size)
-        self.worker.stop_receiving()
-        time.sleep(2)
-        self.worker.start_receiving()
+        self.label_4.setText(f"Error: {size} bytes")
     
     def fileSize(self, typef):
         """Show an error message to the user."""

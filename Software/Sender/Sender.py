@@ -237,7 +237,7 @@ class DataSender(QThread):
 
         try:
             # Create header based on the mode (file or text)
-            file_type = "csv" if self.mode == 1 else "text"
+            file_type = "mp4" if self.mode == 1 else "text"
             file_size = self.get_file_size()
             header = self.create_header(file_type, file_size, self.chunk_size)
 
