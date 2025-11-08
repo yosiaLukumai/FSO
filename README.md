@@ -5,5 +5,5 @@
 
 
 ## What are the application of Free space Optics
-#### >Militar
+#### >Military
 #### >Communication Links
