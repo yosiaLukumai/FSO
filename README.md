@@ -109,7 +109,7 @@ The fog classifier is MobileNetV2 fine-tuned in two phases on RESIDE-SOTS and DA
 
 | Period | Milestone |
 |---|---|
-| Apr 2025 | Project started - research, component sourcing, circuit design |
+| Jul 2024 | Project started - research, component sourcing, circuit design |
 | May – Aug 2025 | Hardware fabrication, alignment frames, first link established |
 | Sep – Nov 2025 | Software development, open-field testing |
 | Dec 2025 | Adaptive power system integrated |
